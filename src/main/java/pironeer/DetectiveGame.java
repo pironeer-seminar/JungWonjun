@@ -1,10 +1,12 @@
 package pironeer;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
 import pironeer.util.Reader;
 import pironeer.util.Timer;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
 
 public class DetectiveGame {
 
@@ -37,19 +39,42 @@ public class DetectiveGame {
         timer.sleep(1000);
 
         // 4. Reader 클래스를 사용하여 탐정의 이름을 입력받고 1.5초 정지
+        System.out.println("탐정님의 이름은? : ");
+        detectiveName = reader.nextLine().trim();
+        timer.sleep(1500);
+
 
         // 5. 캐릭터 중 한 명을 희생자로 지정하고, 목록에서 제거
+        victim = characters.remove(random.nextInt(characters.size()));
 
         murderer = characters.get(random.nextInt(characters.size()));
 
-        List<String> dyingMessageType = List.of(
-                "hair",
-                "clothes",
-                "shoes"
-        );
+        enum DyingMessageType {
+            HAIR("hair"), CLOTHES("clothes"), SHOES("shoes");
+            private final String part;
+
+            DyingMessageType(String part) {
+                this.part = part;
+            }
+
+            public String getDyingMessageType() {
+                return part;
+            }
+        }
 
         // 6. 랜덤하게 속성 값을 선택하고 다잉메시지 출력
-
+        DyingMessageType evidence = DyingMessageType.values()[random.nextInt(DyingMessageType.values().length)];
+        switch (evidence) {
+            case HAIR:
+                dyingMessage = "머리스타일은 " + murderer.getHair() + " 윽..☠";
+                break;
+            case CLOTHES:
+                dyingMessage = "옷은 " + murderer.getClothes() + " 윽..☠";
+                break;
+            case SHOES:
+                dyingMessage = "신발은 " + murderer.getShoes() + " 윽..☠";
+                break;
+        }
         System.out.println("########################################");
         System.out.println("#######        평화로운 해커톤              ");
         System.out.println("########################################");
@@ -87,7 +112,7 @@ public class DetectiveGame {
         timer.sleep(1000);
 
         // 7. 용의자 총 인원수 출력
-        System.out.println("\n문제의 노트북 주위에 있는 사람은 " + {7번} + "명입니다.");
+        System.out.println("\n문제의 노트북 주위에 있는 사람은 " + characters.size() + "명입니다.");
         timer.sleep(1000);
 
         System.out.println("그중, 범인은 바로 이 자리에 있을 것입니다...");
@@ -111,18 +136,33 @@ public class DetectiveGame {
         String choiceName = reader.nextLine().trim();
 
         // 8. 사용자가 입력한 이름을 가진 용의자 조사
+        Optional<Character> optionalSuspect = characters.stream()
+                .filter(man -> man.getName().equals(choiceName))
+                .findFirst();
 
-        System.out.println("잘못된 입력입니다! 시간이 얼마 남지 않았습니다, 다시 시도해주세요!");
-        System.out.println("범인은 아직도 우리 곁에 있어요. 서둘러 진실을 밝혀내야 합니다!");
-        System.out.println(detectiveName + ": 좋아, 이번엔 잘 선택해보자.");
+        optionalSuspect.ifPresentOrElse(
+                character -> {
+                    suspect = character;
+                    System.out.println("용의자 " + suspect.getName() + "의 조사를 시작합니다.");
+                    timer.sleep(1000);
+                    System.out.println("조사가 끝났습니다.");
+                    timer.sleep(1000);
+                    System.out.println(suspect.getName() + "은(는) " + suspect.getHair() + ". 옷은 " + suspect.getClothes() + ". 그리고 신발은 " + suspect.getShoes() + ".");
+                },
+                () -> {
+                    System.out.println("잘못된 입력입니다! 시간이 얼마 남지 않았습니다, 다시 시도해주세요!");
+                    System.out.println("범인은 아직도 우리 곁에 있어요. 서둘러 진실을 밝혀내야 합니다!");
+                    System.out.println(detectiveName + ": 좋아, 이번엔 잘 선택해보자.");
+                    investigate();
+                }
+        );
 
-        investigate();
     }
 
     public boolean matchDyingMessage(Character character) {
-        if (dyingMessage.equals("머리스타일은 " + murderer.getHair() + "윽..☠") ||
-                dyingMessage.equals("옷은 " + murderer.getClothes() + "윽..☠") ||
-                dyingMessage.equals("신발은 " + murderer.getShoes() + "윽..☠")) {
+        if (dyingMessage.equals("머리스타일은 " + character.getHair() + " 윽..☠") ||
+                dyingMessage.equals("옷은 " + character.getClothes() + " 윽..☠") ||
+                dyingMessage.equals("신발은 " + character.getShoes() + " 윽..☠")) {
             return true;
         }
         return false;
@@ -143,7 +183,9 @@ public class DetectiveGame {
         System.out.println("\n범인을 지목할 시간입니다.");
 
         // 10. charaters 각 항목을 인덱스와 함께 출력
-
+        for (int i = 1; i <= characters.size(); i++) {
+            System.out.println(i + ". " + characters.get(i - 1).getName());
+        }
         System.out.println("\n누구를 범인으로 지목하시겠습니까? 이름을 입력하세요: ");
         String choiceName = reader.nextLine().trim();
         System.out.println(detectiveName + ": 범인은 바로 " + choiceName + "씨야");
@@ -166,19 +208,19 @@ public class DetectiveGame {
     public void checkOutcome() {
         if (matchDyingMessage(suspect)) {
             System.out.println("""
-            ----------------------------------------------------------------------------------
-            
-            
-                 ██████╗  █████╗ ███╗   ███╗███████╗    ██╗    ██╗██╗███╗   ██╗
-                ██╔════╝ ██╔══██╗████╗ ████║██╔════╝    ██║    ██║██║████╗  ██║
-                ██║  ███╗███████║██╔████╔██║█████╗      ██║ █╗ ██║██║██╔██╗ ██║
-                ██║   ██║██╔══██║██║╚██╔╝██║██╔══╝      ██║███╗██║██║██║╚██╗██║
-                ╚██████╔╝██║  ██║██║ ╚═╝ ██║███████╗    ╚███╔███╔╝██║██║ ╚████║
-                 ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝     ╚══╝╚══╝ ╚═╝╚═╝  ╚═══╝
-            
-            
-            ----------------------------------------------------------------------------------
-            """);
+                    ----------------------------------------------------------------------------------
+                    
+                    
+                         ██████╗  █████╗ ███╗   ███╗███████╗    ██╗    ██╗██╗███╗   ██╗
+                        ██╔════╝ ██╔══██╗████╗ ████║██╔════╝    ██║    ██║██║████╗  ██║
+                        ██║  ███╗███████║██╔████╔██║█████╗      ██║ █╗ ██║██║██╔██╗ ██║
+                        ██║   ██║██╔══██║██║╚██╔╝██║██╔══╝      ██║███╗██║██║██║╚██╗██║
+                        ╚██████╔╝██║  ██║██║ ╚═╝ ██║███████╗    ╚███╔███╔╝██║██║ ╚████║
+                         ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝     ╚══╝╚══╝ ╚═╝╚═╝  ╚═══╝
+                    
+                    
+                    ----------------------------------------------------------------------------------
+                    """);
             System.out.println("########################################");
             System.out.println("#######        당신은 역시 명탐정!!         ");
             System.out.println("########################################");
@@ -204,7 +246,7 @@ public class DetectiveGame {
                 timer.sleep(1000);
                 String choice = promptChoice("용의자들의 인상착의를 다시 보겠습니까? (네/아니오): ");
                 if (choice.equals("네")) {
-                    System.out.println(detectiveName + ": 좋았어... 다시 차근차근 보자\\n");
+                    System.out.println(detectiveName + ": 좋았어... 다시 차근차근 보자\n");
                     timer.sleep(1000);
                     mainFlow();
                 } else {
@@ -213,17 +255,17 @@ public class DetectiveGame {
             } else {
                 System.out.println(
                         """
-                ----------------------------------------------------------------------------------
-                
-                    ██████╗  █████╗ ███╗   ███╗███████╗     ██████╗ ██╗   ██╗███████╗██████╗ 
-                    ██╔════╝ ██╔══██╗████╗ ████║██╔════╝    ██╔═══██╗██║   ██║██╔════╝██╔══██╗
-                    ██║  ███╗███████║██╔████╔██║█████╗      ██║   ██║██║   ██║█████╗  ██████╔╝
-                    ██║   ██║██╔══██║██║╚██╔╝██║██╔══╝      ██║   ██║╚██╗ ██╔╝██╔══╝  ██╔══██╗
-                    ╚██████╔╝██║  ██║██║ ╚═╝ ██║███████╗    ╚██████╔╝ ╚████╔╝ ███████╗██║  ██║
-                    ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝     ╚═════╝   ╚═══╝  ╚══════╝╚═╝  ╚═╝
-                
-                ----------------------------------------------------------------------------------
-                        """
+                                ----------------------------------------------------------------------------------
+                                
+                                    ██████╗  █████╗ ███╗   ███╗███████╗     ██████╗ ██╗   ██╗███████╗██████╗ 
+                                    ██╔════╝ ██╔══██╗████╗ ████║██╔════╝    ██╔═══██╗██║   ██║██╔════╝██╔══██╗
+                                    ██║  ███╗███████║██╔████╔██║█████╗      ██║   ██║██║   ██║█████╗  ██████╔╝
+                                    ██║   ██║██╔══██║██║╚██╔╝██║██╔══╝      ██║   ██║╚██╗ ██╔╝██╔══╝  ██╔══██╗
+                                    ╚██████╔╝██║  ██║██║ ╚═╝ ██║███████╗    ╚██████╔╝ ╚████╔╝ ███████╗██║  ██║
+                                    ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝     ╚═════╝   ╚═══╝  ╚══════╝╚═╝  ╚═╝
+                                
+                                ----------------------------------------------------------------------------------
+                                """
                 );
                 timer.sleep(1000);
 
