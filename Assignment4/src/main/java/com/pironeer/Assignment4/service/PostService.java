@@ -1,10 +1,13 @@
 package com.pironeer.Assignment4.service;
 
 import com.pironeer.Assignment4.dto.request.PostCreateReq;
+import com.pironeer.Assignment4.dto.response.CommentWithRes;
+import com.pironeer.Assignment4.dto.response.PostGetListRes;
 import com.pironeer.Assignment4.dto.response.PostSearchRes;
 import com.pironeer.Assignment4.entity.Post;
 import com.pironeer.Assignment4.entity.PostStatus;
 import com.pironeer.Assignment4.entity.User;
+import com.pironeer.Assignment4.repository.CommentRepository;
 import com.pironeer.Assignment4.repository.PostRepository;
 import com.pironeer.Assignment4.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -20,6 +24,7 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final UserRepository userRepository;
+    private final CommentRepository commentRepository;
 
     public Long create(PostCreateReq req) {
         User user = userRepository.findById(req.getUserId())
@@ -32,25 +37,56 @@ public class PostService {
     }
 
     public List<PostSearchRes> search() {
-        // PostStatus가 public인 게시글만 조회할 수 있다.
         List<Post> posts = postRepository.findAllByStatus(PostStatus.PUBLIC);
+
         return posts.stream()
-                .map(post ->
-                        new PostSearchRes(post.getUser().getId(), post.getId(), post.getTitle(),
-                                post.getContent(), post.getCreatedAt())
-                )
+                .map(post -> {
+                    List<CommentWithRes> commentDtos = commentRepository.findAllByPost(post).stream()
+                            .map(comment -> new CommentWithRes(
+                                    comment.getId(),
+                                    comment.getContent()
+                            ))
+                            .toList();
+
+                    return new PostSearchRes(
+                            post.getUser().getId(),
+                            post.getId(),
+                            post.getTitle(),
+                            post.getContent(),
+                            post.getCreatedAt(),
+                            commentDtos
+                    );
+                })
                 .toList();
+    }
+
+
+    public List<PostGetListRes> findByUser(Long userId) {
+        if (userRepository.findById(userId).isEmpty()) {
+            throw new IllegalStateException("해당 유저가 존재하지 않습니다.");
+        }
+        List<Post> posts = postRepository.findAllByUserId(userId);
+        return posts.stream()
+                .map(post -> new PostGetListRes(post.getId(), post.getTitle(), post.getContent()))
+                .collect(Collectors.toList());
     }
 
     public PostSearchRes detail(Long postId) {
         Post post = postRepository.findById(postId)
-                .orElseThrow(()-> new IllegalStateException(""));
-        return new PostSearchRes(post.getUser().getId(), post.getId(), post.getTitle(), post.getContent(), post.getCreatedAt());
+                .orElseThrow(()-> new IllegalStateException("해당 게시글이 존재하지 않습니다."));
+        return new PostSearchRes(post.getUser().getId(), post.getId(), post.getTitle(), post.getContent(), post.getCreatedAt(),
+                commentRepository.findAllByPost(post).stream()
+                        .map(comment -> new CommentWithRes(
+                                comment.getId(),
+                                comment.getContent()
+                        ))
+                        .toList()
+        );
     }
 
     public Long update(Long postId, PostCreateReq req) {
         Post post = postRepository.findById(postId)
-                        .orElseThrow(()-> new IllegalStateException(""));
+                        .orElseThrow(()-> new IllegalStateException("해당 게시글이 존재하지 않습니다."));
         post.update(req.getTitle(), req.getContent(), req.getStatus());
         postRepository.save(post);
         return post.getId();

@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserCreateReq {
-    private String name;
+public class LikeCreateReq {
+    private Long postId;
+    private Long userId;
 }
