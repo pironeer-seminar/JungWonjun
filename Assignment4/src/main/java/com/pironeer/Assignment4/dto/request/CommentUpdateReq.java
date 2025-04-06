@@ -7,6 +7,6 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserCreateReq {
-    private String name;
+public class CommentUpdateReq {
+    private String content;
 }
