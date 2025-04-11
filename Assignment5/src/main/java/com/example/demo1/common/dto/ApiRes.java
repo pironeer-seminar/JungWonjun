@@ -4,10 +4,21 @@ import com.example.demo1.common.exception.BaseException;
 import com.example.demo1.common.type.ErrorType;
 import com.example.demo1.common.type.SuccessType;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.http.HttpStatus;
 
 public record ApiRes<T> (
-        Integer status, String code, String message, @JsonInclude(JsonInclude.Include.NON_NULL) T data) {
+        @Schema(description = "HTTP 상태 코드", example = "200")
+        Integer status,
+
+        @Schema(description = "성공 또는 에러 코드", example = "POST_1")
+        String code,
+
+        @Schema(description = "응답 메세지", example = "게시글 생성에 성공하였습니다.")
+        String message,
+
+        @Schema(description = "실제 응답 데이터")
+        @JsonInclude(JsonInclude.Include.NON_NULL) T data) {
 
     // 응답 데이터 없는 버전
     public static ApiRes<?> success(SuccessType successType) {
